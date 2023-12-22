@@ -123,3 +123,19 @@ detach("package:phangorn", unload=TRUE)
 plot(treeNJ, main="NJ")
 ape::write.tree(treeNJ, file='ASVs_tree.txt')
 
+#Read metadata file 
+samples.out <- rownames(seqtab.nochim)
+samdf <- read.csv("metadata.csv")
+rownames(samdf) <- samples.out
+colnames(seqtab.nochim)<-paste0("ASV_", 1:ncol(seqtab.nochim)) 
+
+#Combining into a phyloseq object. 
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
+               sample_data(samdf), 
+               tax_table(asv_tax),
+               phy_tree(fitGTR$tree),
+               refseq(ASVs.nochim))
+ps
+save(ps, file=file.path(getwd(), "phyloseq.RData"))
+
+
