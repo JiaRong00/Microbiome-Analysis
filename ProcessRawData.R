@@ -1,5 +1,5 @@
 #Load the packages
-library(dada2) library(DECIPHER) library(phangorn) library(phyloseq)
+library(dada2); library(DECIPHER); library(phangorn); library(phyloseq)
 
 #store directory path
 pathF="./FWD"
@@ -134,6 +134,6 @@ ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE),
                phy_tree(fitGTR$tree),
                refseq(ASVs.nochim))
 ps
-save(ps, file="phyloseq.RData"))
+save(ps, file="phyloseq.RData")
 
 
