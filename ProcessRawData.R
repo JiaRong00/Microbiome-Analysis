@@ -20,7 +20,6 @@ sample.namesR<- sapply(strsplit(basename(fnRs), "_"), `[`, 1)
 plotQualityProfile(fnFs[1:2])
 plotQualityProfile(fnRs[1:2])
 
-
 # Place filtered files in a new folder named filtered
 filtFs <- file.path(pathF, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
 filtRs <- file.path(pathR, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
@@ -58,7 +57,6 @@ for(sample in sample.names) {
 seqtab <- makeSequenceTable(mergers)
 saveRDS(seqtab, "seqtab.rds")
 
-
 #remove chimeras
 seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
 dim(seqtab.nochim) 
@@ -80,7 +78,7 @@ load("SILVA_SSU_r138_2019.RData")
 ids <- IdTaxa(dna, trainingSet, strand="top", processors=NULL, verbose=FALSE) # use all processors
 ranks <- c("domain", "phylum", "class", "order", "family", "genus", "species") # ranks of interest
 
-# Assigning ASV IDs (ASV_1, ASV_2...)
+# Assigning ASV IDs (ASV_1, ASV_2 etc)
 asv_seqs <- colnames(seqtab.nochim)
 asv_headers <- vector(dim(seqtab.nochim)[2], mode="character")
 
@@ -118,7 +116,7 @@ fit = pml(treeNJ, data=phang.align)
 fitGTR <- update(fit, k=4, inv=0.2)
 fitGTR <- optim.pml(fitGTR, model="GTR", optInv=TRUE, optGamma=TRUE,
                     rearrangement = "stochastic", control = pml.control(trace = 0))
-save(fitGTR, file=file.path(pathname, "fitGTR.RData"))
+save(fitGTR, file="fitGTR.RData")
 detach("package:phangorn", unload=TRUE)
 plot(treeNJ, main="NJ")
 ape::write.tree(treeNJ, file='ASVs_tree.txt')
@@ -136,6 +134,6 @@ ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE),
                phy_tree(fitGTR$tree),
                refseq(ASVs.nochim))
 ps
-save(ps, file=file.path(getwd(), "phyloseq.RData"))
+save(ps, file="phyloseq.RData"))
 
 
