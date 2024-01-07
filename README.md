@@ -8,6 +8,6 @@ Modifications from the Dada2 pipeline workflow tutorial (1.16):
 4) ASV IDs are assigned. The resultant sequence tables and taxonomy tables uses the shortened ASV IDs instead of displaying the full DNA sequence.
 5) The ASV DNA sequences are stored in a FASTA file.
 6) Code for creating phylogenic tree has been added in.
-7) The microbiome dataset used is the same as the data for the mothur MiSeq SOP https://mothur.org/wiki/miseq_sop/, but the metadata used in subsequent data analysis has been modified.
+7) The microbiome dataset used is the same as the data for the mothur MiSeq SOP https://mothur.org/wiki/miseq_sop/, but the mock data has been removed.
 
-Downstream Analysis:
+
