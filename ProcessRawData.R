@@ -1,7 +1,7 @@
 #Load the packages
 library(dada2); library(DECIPHER); library(phangorn); library(phyloseq)
 
-#store directory path
+#store directory path. If multiple sequencing runs were carried out, process each run separately up till the sample infeference step.
 pathF="./FWD"
 pathR="./REV"
 
@@ -23,32 +23,32 @@ plotQualityProfile(fnRs[1:2])
 # Place filtered files in a new folder named filtered
 filtFs <- file.path(pathF, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
 filtRs <- file.path(pathR, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
-names(filtFs) <- sample.names
-names(filtRs) <- sample.names
 
 #Read filtering
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160),
                      maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                      compress=TRUE, multithread=FALSE) 
 
-#Error rate model for forward & reverse read estimates.
+#Error rate model for forward & reverse read estimates. 
 set.seed(100)
 errF <- learnErrors(filtFs,nbases = 1e8, multithread=TRUE, randomize=TRUE)
 errR <- learnErrors(filtRs, nbases = 1e8, multithread=TRUE, randomize=TRUE)
 
 
 #Sample inference(De-noising)
+names(filtFs) <- sample.names
+names(filtRs) <- sample.names
 getN <- function(x) sum(getUniques(x))
 trackF <- c()
 trackR <- c()
 mergers <- vector("list", length(sample.names))
 names(mergers) <- sample.names
-for(sample in sample.names) {
+for(sample in sample.names[1:]) { #Can change number in bracket to process eg. first 10 samples and continue next day if the sample inference step takes too long
   cat("Processing:", sample, "\n") #Show which sample is being merged
   dadaFs <- dada(filtFs[[sample]], err=errF, multithread=TRUE)
   dadaRs <- dada(filtRs[[sample]], err=errR, multithread=TRUE)
-  trackF <- append(trackF, getN(dadaFs))
-  trackR <- append(trackR, getN(dadaRs))
+  trackF[sample] <- getN(dadaFs)
+  trackR[sample]<- getN(dadaRs)
   merger <- mergePairs(dadaFs, filtFs[[sample]], dadaRs, filtRs[[sample]], verbose=TRUE)
   mergers[[sample]] <- merger
 }
@@ -57,18 +57,26 @@ for(sample in sample.names) {
 seqtab <- makeSequenceTable(mergers)
 saveRDS(seqtab, "seqtab.rds")
 
+#If multiple sequencing runs conducted, combine the sequence tables for each run before proceeding
+track <- cbind(out, trackF, trackR, sapply(mergers, getN))
+# If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
+colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged")
+rownames(track) <- sample.names
+saveRDS(track, "track_reads.rds")
+run1 <-readRDS("Path/seqtab.rds")
+run2 <-readRDS("Path/seqtab.rds")
+st.all <- mergeSequenceTables(run1, run2)
+
 #remove chimeras
-seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+seqtab.nochim <- removeBimeraDenovo(st.all, method="consensus", multithread=TRUE, verbose=TRUE)
 dim(seqtab.nochim) 
 saveRDS(seqtab.nochim,"seqtab_final.rds") 
 write.csv(seqtab.nochim,"seqtab.csv", row.names=TRUE)
 
 #Check reads lost through pipeline
-getN <- function(x) sum(getUniques(x))
-track <- cbind(out, trackF, trackR, sapply(mergers, getN), rowSums(seqtab.nochim), round(rowSums(seqtab.nochim)/out[,1]*100, 1))
-# If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
-colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim", "percentage_retained")
-rownames(track) <- sample.names
+nonchim <- rowSums(seqtab.nochim)
+percentage_retained <- round(rowSums(seqtab.nochim)/st.all[,1]*100, 1)
+track <- cbind(st.all, nonchim, percentage_retained)
 saveRDS(track, "track_reads_final.rds")
 write.csv(track, "track_reads_final.csv")
 
