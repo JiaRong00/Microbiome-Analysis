@@ -16,24 +16,27 @@ if(length(fnFs) != length(fnRs)) stop("Forward and reverse files do not match.")
 sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
 sample.namesR<- sapply(strsplit(basename(fnRs), "_"), `[`, 1)
 
-#Forward & Reverse Read quality 
+#Forward & Reverse Read quality. Usually the plots for samples in the same run should look similar, hence not necesaary to look at all plots.
 plotQualityProfile(fnFs[1:2])
-plotQualityProfile(fnRs[1:2])
+plotQualityProfile(fnRs[1:2]) #Normally the plot quality is worse for reverse reads.
+
 
 # Place filtered files in a new folder named filtered
 filtFs <- file.path(pathF, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
 filtRs <- file.path(pathR, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
 
-#Read filtering
-out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160),
+#Read filtering. truncate at length at which read quality fall below 30, but ensure there is minimum of of 12bp for overlap.
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160), #truncate at 240 for forward reads, 160 for reverse reads.
                      maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
-                     compress=TRUE, multithread=FALSE) 
+                     compress=TRUE, multithread=FALSE) #multithread=FALSE for windows.
+#May decrease maxEE to reduce computation time for sample inference step. 
 
 #Error rate model for forward & reverse read estimates. 
 set.seed(100)
 errF <- learnErrors(filtFs,nbases = 1e8, multithread=TRUE, randomize=TRUE)
 errR <- learnErrors(filtRs, nbases = 1e8, multithread=TRUE, randomize=TRUE)
-
+plotErrors(errF, nominalQ=TRUE) #black line should be a good fit to the data
+#However, if binned quality reads are used then the error model will likely not be a good fit. In this case, refer to @JacobRPrice's solution on https://github.com/benjjneb/dada2/issues/1307
 
 #Sample inference(De-noising)
 names(filtFs) <- sample.names
