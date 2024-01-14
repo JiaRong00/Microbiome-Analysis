@@ -2,8 +2,8 @@
 library(dada2); library(DECIPHER); library(phangorn); library(phyloseq)
 
 #store directory path. If multiple sequencing runs were carried out, process each run separately up till the sample infeference step.
-pathF="./FWD"
-pathR="./REV"
+pathF="./Run1/FWD"
+pathR="./Run1/REV"
 
 # Forward and reverse fastq filenames have format: SAMPLENAME_R1_001.fastq and SAMPLENAME_R2_001.fastq
 fnFs <- sort(list.files(pathF,  pattern="_R1_001.fastq", full.names = TRUE))
@@ -29,6 +29,7 @@ filtRs <- file.path(pathR, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160), #truncate at 240 for forward reads, 160 for reverse reads.
                      maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                      compress=TRUE, multithread=FALSE) #multithread=FALSE for windows.
+saveRDS(out, "./Run1/out.rds")
 #May decrease maxEE to reduce computation time for sample inference step. 
 
 #Error rate model for forward & reverse read estimates. 
@@ -37,7 +38,9 @@ errF <- learnErrors(filtFs,nbases = 1e8, multithread=TRUE, randomize=TRUE)
 errR <- learnErrors(filtRs, nbases = 1e8, multithread=TRUE, randomize=TRUE)
 plotErrors(errF, nominalQ=TRUE) #black line should be a good fit to the data
 #However, if binned quality reads are used then the error model will likely not be a good fit. In this case, refer to @JacobRPrice's solution on https://github.com/benjjneb/dada2/issues/1307
-
+saveRDS(errF, "./Run1/errF.rds")
+saveRDS(errR, "./Run1/errR.rds")
+        
 #Sample inference(De-noising)
 names(filtFs) <- sample.names
 names(filtRs) <- sample.names
@@ -58,7 +61,7 @@ for(sample in sample.names[1:]) { #Can change number in bracket to process eg. f
 
 #Construct sequence Table
 seqtab <- makeSequenceTable(mergers)
-saveRDS(seqtab, "seqtab.rds")
+saveRDS(seqtab, "./Run1/seqtab.rds")
 
 #If multiple sequencing runs conducted, combine the sequence tables for each run before proceeding
 track <- cbind(out, trackF, trackR, sapply(mergers, getN))
@@ -66,8 +69,8 @@ track <- cbind(out, trackF, trackR, sapply(mergers, getN))
 colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged")
 rownames(track) <- sample.names
 saveRDS(track, "track_reads.rds")
-run1 <-readRDS("Path/seqtab.rds")
-run2 <-readRDS("Path/seqtab.rds")
+run1 <-readRDS("./Run1/seqtab.rds")
+run2 <-readRDS("./Run2/seqtab.rds")
 st.all <- mergeSequenceTables(run1, run2)
 
 #remove chimeras
