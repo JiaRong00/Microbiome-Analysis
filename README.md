@@ -1,5 +1,5 @@
 # Microbiome Analysis
-Producing an example of microbiome analysis for large datasets using the Dada2 pipeline. The codes from the Dada2 pipeline workflow tutorial (1.16) from https://benjjneb.github.io/dada2/tutorial.html have been adapted for use in this project. The taxonomy is assigned with reference to SILVA database v138.
+Producing an example of processing microbiome sequencing data for large datasets using the Dada2 pipeline. The codes from the Dada2 pipeline workflow tutorial (1.16) from https://benjjneb.github.io/dada2/tutorial.html have been adapted for use in this project. The taxonomy is assigned with reference to SILVA database v138.
 
 Modifications from the Dada2 pipeline workflow tutorial (1.16):
 1) The code from the tutorial has been modified for processing of big data, through incorporation of the optimised code from https://benjjneb.github.io/dada2/bigdata.html while keeping the rest of the workflow similar to that in the tutorial.
